@@ -1,0 +1,4 @@
+include ':nautilus'
+include ':nautilus-navigations:fragments'
+include ':nautilus-navigations:tabs'
+include ':sample'
