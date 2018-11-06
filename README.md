@@ -1,7 +1,7 @@
 Nautilus
 ========
 
-[![Release](https://jitpack.io/v/jetradarmobile/mrbutler.svg)](https://jitpack.io/#jetradarmobile/nautilus)
+[![Release](https://jitpack.io/v/jetradarmobile/nautilus.svg)](https://jitpack.io/#jetradarmobile/nautilus)
 [![API](https://img.shields.io/badge/API-14%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=14)
 
 Android App Navigation
