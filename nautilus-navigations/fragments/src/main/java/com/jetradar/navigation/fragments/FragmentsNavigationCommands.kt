@@ -19,11 +19,16 @@ package com.jetradar.navigation.fragments
 import androidx.fragment.app.Fragment
 import com.jetradar.navigation.NavigationCommand
 
-class OpenScreenCommand(
+class ForwardCommand(
     val fragment: Fragment,
-    val addToBackStack: Boolean
+    val tag: String = fragment.javaClass.name,
+    val animations: AnimationHolder? = null
 ) : NavigationCommand
 
-class OpenAsRootScreenCommand(
-    val fragment: Fragment
+class ReplaceCommand(
+    val fragment: Fragment,
+    val tag: String = fragment.javaClass.name,
+    val animations: AnimationHolder? = null
 ) : NavigationCommand
+
+class BackToCommand(val tag: String) : NavigationCommand
