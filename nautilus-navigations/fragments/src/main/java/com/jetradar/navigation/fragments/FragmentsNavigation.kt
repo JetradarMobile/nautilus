@@ -19,6 +19,7 @@ package com.jetradar.navigation.fragments
 import androidx.annotation.IdRes
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.transaction
 import com.jakewharton.rxrelay2.PublishRelay
 import com.jetradar.navigation.Navigation
@@ -29,7 +30,8 @@ import io.reactivex.Observable
 
 class FragmentsNavigation(
     private val fragmentManager: FragmentManager,
-    @IdRes private val containerViewId: Int
+    @IdRes private val containerViewId: Int,
+    private val defaultAnimations: AnimationHolder? = null
 ) : Navigation {
 
   private val navigationEvents = PublishRelay.create<NavigationEvent>()
@@ -38,40 +40,59 @@ class FragmentsNavigation(
 
   override fun navigate(command: NavigationCommand): Boolean = with(command) {
     when (this) {
-      is OpenScreenCommand       -> openScreen(fragment, addToBackStack)
-      is OpenAsRootScreenCommand -> openAsRootScreenCommand(fragment)
-      else                       -> return false
+      is ForwardCommand -> forward(fragment, tag, animations)
+      is ReplaceCommand -> replace(fragment, tag, animations)
+      is BackToCommand  -> backTo(tag)
+      else              -> return false
     }
     return true
   }
 
-  private fun openScreen(fragment: Fragment, addToBackStack: Boolean) {
+  private fun forward(fragment: Fragment, tag: String, animations: AnimationHolder?) {
     fragmentManager.transaction(allowStateLoss = true) {
-      add(containerViewId, fragment)
-      if (addToBackStack) addToBackStack(null)
+      replace(containerViewId, fragment, tag)
+      addToBackStack(tag)
+      applyAnimation(animations)
     }
-    navigationEvents.accept(OpenScreenEvent(fragment.javaClass.name))
+    navigationEvents.accept(OpenScreenEvent(tag))
   }
 
-  private fun openAsRootScreenCommand(fragment: Fragment) {
-    clear()
-    fragmentManager.transaction(allowStateLoss = true) { replace(containerViewId, fragment) }
-    fragmentManager.executePendingTransactions()
+  private fun replace(fragment: Fragment, tag: String, animations: AnimationHolder?) {
+    fragmentManager.transaction(allowStateLoss = true) {
+      replace(containerViewId, fragment, tag)
+      applyAnimation(animations)
+    }
+    navigationEvents.accept(OpenScreenEvent(tag))
+  }
+
+  private fun FragmentTransaction.applyAnimation(animations: AnimationHolder?) {
+    val customAnimation = animations ?: defaultAnimations
+    customAnimation?.let { setCustomAnimations(it.enter, it.exit, it.popEnter, it.popExit) }
+  }
+
+  private fun backTo(tag: String) {
+    do {
+      if (currentScreen()?.tag == tag) {
+        fragmentManager.executePendingTransactions()
+        return
+      }
+    } while (back())
+    throw IllegalStateException("Screen with tag=$tag not found in stack")
   }
 
   override fun back(): Boolean {
     val currentScreen = currentScreen() ?: return false
-    val popped = fragmentManager.popBackStackImmediate() // TODO: remove fragments by container id
-    if (popped) navigationEvents.accept(CloseScreenEvent(currentScreen.javaClass.name))
-    return popped
+    if (fragmentManager.backStackEntryCount == 0) return false
+    fragmentManager.popBackStack(currentScreen.tag ?: currentScreen.javaClass.name, 0)
+    navigationEvents.accept(CloseScreenEvent(currentScreen.tag ?: currentScreen.javaClass.name))
+    return true
   }
 
   override fun clear() {
-    fragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE) // TODO: remove fragments by container id
+    fragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
   }
 
-  private fun currentScreen(): Fragment? =
-      fragmentManager.findFragmentById(containerViewId)
+  private fun currentScreen(): Fragment? = fragmentManager.findFragmentById(containerViewId)
 
   companion object {
 

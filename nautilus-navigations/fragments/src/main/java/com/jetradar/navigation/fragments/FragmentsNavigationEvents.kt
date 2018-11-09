@@ -19,13 +19,13 @@ package com.jetradar.navigation.fragments
 import com.jetradar.navigation.NavigationEvent
 
 class OpenScreenEvent(
-    val fragment: String
+    val tag: String
 ) : NavigationEvent {
-  override val message = "→ $fragment"
+  override val message = "→ $tag"
 }
 
 class CloseScreenEvent(
-    val fragment: String
+    val tag: String
 ) : NavigationEvent {
-  override val message = "← $fragment"
+  override val message = "← $tag"
 }
